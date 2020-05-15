@@ -8,10 +8,14 @@ db.usersresponse.update({}, {
 });
 
 //To get all the dates from question table-
-db.questions.find( {  }, { date: 1 } )
+db.questions.find({}, {
+  date: 1
+})
 
 //remove a specific user with userId
-db.users.remove({'id':'5eb46d862a84b300101c81e8'})
+db.users.remove({
+  'id': '5eb46d862a84b300101c81e8'
+})
 
 //this will copy collection users from jindarshandev to jintest
 use jindarshandev
@@ -32,54 +36,36 @@ db.questions.find().forEach(function (d) {
   db.getSiblingDB('jindarshandev')['questions'].insert(d);
 });
 
+//aggr query 
+db.users.aggregate([
+            {
+              $lookup: {
+                from: "usersresponse",
 
+                let: { user_Id: "$userId" },
 
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $ne: ["$$user_Id", "$usersAnswer.userId"] },
+                          { $eq: ["$date", "25-APR"] }
+                        ]
+                      }
+                    }
+                  },
 
-
-db.users.aggregate([{
-  $lookup: {
-
-    from: "usersresponse",
-
-    let: {
-      user_Id: "$userId"
-    },
-
-    pipeline: [
-
-      {
-
-        $match: {
-          $expr: {
-            $and: [{
-                $in: ["$$user_Id", "$usersAnswer.userId"]
-              },
-              {
-                $eq: ["$date", "10-MAY"]
+                  {
+                    $project: {
+                      "usersAnswer.userId": 1,
+                      "usersAnswer.score": 1,
+                      "usersAnswer.time": 1,
+                      date: 1
+                    }
+                  }
+                ],
+                as: "userInfo"
               }
-
-            ]
-          }
-        }
-
-
-
-        {
-
-          $project: {
-            "usersAnswer.userId": 1,
-            "usersAnswer.score": 1,
-            "usersAnswer.time": 1,
-            date: 1
-
-          }
-
-        }
-      },
-
-    ],
-    as: "test"
-
-  }
-
-}]).pretty();
+            }
+          ]).pretty();
