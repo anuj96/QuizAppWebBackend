@@ -1,0 +1,85 @@
+//update qyuery to only update selected date and delete everything from usersAnswers
+db.usersresponse.update({}, {
+  $pull: {
+    'usersAnswer': {}
+  }
+}, {
+  multi: true
+});
+
+//To get all the dates from question table-
+db.questions.find( {  }, { date: 1 } )
+
+//remove a specific user with userId
+db.users.remove({'id':'5eb46d862a84b300101c81e8'})
+
+//this will copy collection users from jindarshandev to jintest
+use jindarshandev
+db.users.find().forEach(function (d) {
+  db.getSiblingDB('jintest')['users'].insert(d);
+});
+
+
+//copy the tables from 1 db to another 
+use jindarshan
+db.users.find().forEach(function (d) {
+  db.getSiblingDB('jindarshandev')['users'].insert(d);
+});
+db.usersresponse.find().forEach(function (d) {
+  db.getSiblingDB('jindarshandev')['usersresponse'].insert(d);
+});
+db.questions.find().forEach(function (d) {
+  db.getSiblingDB('jindarshandev')['questions'].insert(d);
+});
+
+
+
+
+
+db.users.aggregate([{
+  $lookup: {
+
+    from: "usersresponse",
+
+    let: {
+      user_Id: "$userId"
+    },
+
+    pipeline: [
+
+      {
+
+        $match: {
+          $expr: {
+            $and: [{
+                $in: ["$$user_Id", "$usersAnswer.userId"]
+              },
+              {
+                $eq: ["$date", "10-MAY"]
+              }
+
+            ]
+          }
+        }
+
+
+
+        {
+
+          $project: {
+            "usersAnswer.userId": 1,
+            "usersAnswer.score": 1,
+            "usersAnswer.time": 1,
+            date: 1
+
+          }
+
+        }
+      },
+
+    ],
+    as: "test"
+
+  }
+
+}]).pretty();
